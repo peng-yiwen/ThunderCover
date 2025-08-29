@@ -18,7 +18,7 @@ You must code three functions (speak, vote, guess) in Python using the format gi
 
 Please note that:
 
-1. The words must belong to the [Small World of Words](https://netset.telecom-paris.fr/pages/swow.html) -- see player.py.
+1. The words must belong to the [Small World of Words](https://netset.telecom-paris.fr/pages/swow.html).
 2. The votes are secret.
 
 ## Testing your player
