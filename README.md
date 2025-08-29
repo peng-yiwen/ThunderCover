@@ -8,7 +8,7 @@ The objective is to code a player to the game [Undercover](https://www.yanstarst
 
 ## Dependency
 
-You must install scikit-network to download the list of words:
+You must install [scikit-network](https://scikit-network.readthedocs.io/en/latest/) to download the list of words:
 
 `pip install scikit-network`
 
