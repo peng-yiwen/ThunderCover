@@ -28,3 +28,12 @@ The script random_player.py gives an example of a random player.
 
 Please test your player using test.py.
 
+## Samples
+
+Here are some examples of secret words (civilian, undercover):
+- cat, dog
+- push,pull
+- card,dice
+- spring,autumn
+- boat,submarine
+- coffee,tea
