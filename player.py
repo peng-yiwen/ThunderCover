@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Uncover game
+
 # Compared to the standard game: 
 # 1. The list of words is constrained.
 # 2. The order of players is random at each round.
@@ -14,9 +15,9 @@ from sknetwork.data import load_netset
 
 data = load_netset('swow')
 adjacency = data.adjacency  # graph (if needed)
-words = data.names  # words
+words = [str(word) for word in data.names]  # words
 
-# Functions to complete; your code must run fast (< 1s on a laptop)
+# Functions to complete; your code must run fast (less than 100ms on a laptop)
 
 def speak(n_players, player, secret_word="", list_words=[], list_players=[], roles=dict()) -> str:
     """
