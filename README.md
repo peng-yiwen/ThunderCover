@@ -19,9 +19,10 @@ You must code three functions (speak, vote, guess) in Python using the format gi
 Please note that:
 
 1. The words must belong to the [Small World of Words](https://netset.telecom-paris.fr/pages/swow.html).
-2. The votes are secret.
+2. The order of players is random at each round.
+3. The votes are secret.
 
 ## Testing your player
 
-The file test.py allows to test your player (to be done).
+Please test your player using test.py.
 
