@@ -22,6 +22,8 @@ Please note that:
 2. The order of players is random at each round.
 3. The votes are secret.
 
+The code random_player.py gives an example of a random player.
+
 ## Testing your player
 
 Please test your player using test.py.
