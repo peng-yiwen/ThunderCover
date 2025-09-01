@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 
 # Uncover game
-# Compared to the standard game: 1. The list of words is constrained, 2. The votes are secret.
+# Compared to the standard game: 
+# 1. The list of words is constrained.
+# 2. The order of players is random at each round.
+# 3. The votes are secret.
 
 # List of available words, taken from the Small World of Words
 
