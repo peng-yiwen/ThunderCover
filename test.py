@@ -20,7 +20,7 @@ words = [str(word) for word in data.names]  # words
 # This is a function to test your player
 
 import time
-from pagerank_player import speak, vote, guess
+from player import speak, vote, guess
 
 def test_player(roles, rounds):
     # init
@@ -69,7 +69,7 @@ def test_player(roles, rounds):
                 arguments = [n_players, player, secret_word[player], list_words[:t], list_players, known_roles]
             except: 
                 print(f"Error on vote... \n Arguments = {arguments}")
-            if candidate not in players:
+            if candidate not in players or candidate == player:
                 print(f"Error on vote... \n Incorrect player {candidate} \n Arguments = {arguments}")        
             if t1 - t0 > 0.1:
                 print(f"Vote too slow... \n Time = {t1 - t0} \n Arguments = {arguments}")        
