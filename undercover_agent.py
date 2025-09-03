@@ -123,8 +123,8 @@ def guess(n_players, player, list_words=[], list_players=[], roles=dict()) -> st
     if not list_words:
         return "life"
 
-    # Candidate pool: neighbors of spoken words + spoken words
-    candidates = set(list_words)
+    # Candidate pool: neighbors of spoken words
+    candidates = set()
     for w in list_words:
         for n, _ in neighbors.get(w, [])[:TOPK]:
             candidates.add(n)
