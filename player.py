@@ -168,7 +168,7 @@ def speak(
     for c in candidates:
         B = topic_scores[c]
         F = fidelity_scores[c]
-        score = weight_fidelity * F + weight_topic * B
+        score = weight_fidelity * F + weight_topic * B * 10000
         if c in top_secret_neis:
             score -= 0.30
         neigh_weights = list(neighbors.get(c, {}).values())
