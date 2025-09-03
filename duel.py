@@ -43,7 +43,6 @@ speak_[team] = speak
 vote_[team] = vote
 guess_[team] = guess
 
-
 # single game
 
 def match(roles, teams, order, civilian_word, undercover_word):
