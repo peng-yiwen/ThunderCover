@@ -52,6 +52,49 @@ def _topic_score(c: str, spoken: list[str]) -> float:
     return np.mean([_similarity(c, w) for w in spoken])
 
 
+def _cross_similarity(secret_word: str, spoken: list[str], bg_nei: int = 50, max_bg: int = 1000):
+    """
+    Return (cross_sim, pct)
+      - cross_sim = mean similarity(secret_word, w) over spoken
+      - pct = percentile of cross_sim vs background similarities (BG built from neighbors of spoken words)
+    Both are fast and use only the cached neighbor dicts.
+    """
+    if not spoken:
+        return 0.0, 0.5  # no signal -> neutral percentile
+
+    # raw cross similarity
+    cross_sim = float(np.mean([_similarity(secret_word, w) for w in spoken]))
+
+    # build background pool from neighbors of spoken words
+    BG = set()
+    for w in spoken:
+        for n in list(neighbors.get(w, {}).keys())[:bg_nei]:
+            BG.add(n)
+
+    # fallback: if BG empty sample from whole vocab (small sample)
+    if not BG:
+        rng = np.random.default_rng()
+        sample_size = min(len(words), max_bg)
+        sampled = rng.choice(words, size=sample_size, replace=False)
+        BG = set(sampled)
+    else:
+        if len(BG) > max_bg:
+            BG = set(np.random.choice(list(BG), size=max_bg, replace=False))
+
+    # compute bg sims (mean similarity to the spoken set)
+    bg_sims = []
+    for b in BG:
+        bg_sims.append(float(np.mean([_similarity(b, w) for w in spoken])))
+
+    if not bg_sims:
+        return cross_sim, 0.5
+
+    bg_sims = np.array(bg_sims)
+    pct = float((bg_sims <= cross_sim).sum()) / len(bg_sims)
+
+    return cross_sim, pct
+
+
 def speak(
     n_players, player, secret_word="", list_words=[], list_players=[], roles=dict()
 ) -> str:
@@ -75,46 +118,67 @@ def speak(
     roles: dict
         Known roles.
         Key = player, Value = role ("C" for Civilian, "U" for Undercover, "W" for Mr White).
-
-    Examples
-    --------
-    > speak(5, 4, "cat", ["milk"], [3])
-    > "lion"
-
-    > speak(5, 4, "cat", ["milk", "lion", "house", "cheese", "friend"], [3, 4, 2, 1, 5], {2: "U"})
-    > "sleep"
     """
 
+    # Mr White case: handled near the end (keeps original logic)
     spoken = list_words
-    candidates = set(neighbors.get(secret_word, {}).keys())
+
+    # Candidate pool: neighbors of secret_word + neighbors of recent spoken words
+    candidates = set()
+    if secret_word:
+        candidates.update(neighbors.get(secret_word, {}).keys())
     for w in spoken:
         for n in list(neighbors.get(w, {}).keys())[:4]:
             candidates.add(n)
-    candidates.discard(secret_word)
+
+    # cleanup
+    if secret_word:
+        candidates.discard(secret_word)
     candidates = [c for c in candidates if c not in spoken]
     if not candidates:
         candidates = [w for w in words if w not in spoken]
 
+    # topic & fidelity
     topic_scores = {c: _topic_score(c, spoken) for c in candidates}
-    fidelity_scores = {c: _similarity(c, secret_word) for c in candidates}
+    fidelity_scores = {c: _similarity(c, secret_word) if secret_word else 0.0 for c in candidates}
 
+    # compute cross-similarity percentile -> p_majority
+    if secret_word:
+        _, p_majority = _cross_similarity(secret_word, spoken)
+    else:
+        p_majority = 0.5
+
+    # interpolate fidelity weight using p_majority
+    wF_min, wF_max = 0.20, 0.75
+    weight_fidelity = wF_min + p_majority * (wF_max - wF_min)
+    weight_topic = 1.0 - weight_fidelity
+
+    # mild round influence (keeps some of your previous behavior)
     round_idx = len(spoken) // max(1, n_players)
+    if p_majority > 0.6:
+        round_multiplier = 1.0 + 0.15 * min(round_idx, 3)
+        weight_fidelity = min(0.95, weight_fidelity * round_multiplier)
+        weight_topic = 1.0 - weight_fidelity
 
     scored = []
+    # penalize overly-obvious neighbors and hubs
+    top_secret_neis = []
+    if secret_word:
+        top_secret_neis = list(neighbors.get(secret_word, {}).keys())[:3]
     for c in candidates:
         B = topic_scores[c]
         F = fidelity_scores[c]
-        if round_idx == 0:
-            score = 0.3 * F + 0.6 * B
-        elif round_idx == 1:
-            score = 0.5 * F + 0.4 * B
-        else:
-            score = 0.6 * F + 0.3 * B
+        score = weight_fidelity * F + weight_topic * B
+        if c in top_secret_neis:
+            score -= 0.30
+        neigh_weights = list(neighbors.get(c, {}).values())
+        hubness = float(np.mean(neigh_weights)) if neigh_weights else 0.0
+        score -= 0.10 * hubness
         scored.append((c, score))
 
     scored.sort(key=lambda x: -x[1])
 
-    # Mr White case: secret_word empty
+    # If Mr White (secret_word empty) fallback selection to blend with room
     if secret_word == "":
         if not list_words:
             return "life"
@@ -137,27 +201,6 @@ def vote(
     """
     Vote for a player to eliminate at the end of a round.
     The returned player index cannot be yours, nor a player that has already been eliminated (role known).
-
-    Parameters
-    ----------
-    n_players: int
-        Number of players.
-    player: int
-        Your player id (from 1 to n_players).
-    secret_word: string
-        Your secret word (empty string if Mr White).
-    list_words: list of string
-        List of words given since the start of the game (empty if you start).
-    list_players: list of int
-        List of players having spoken since the start of the game (empty if you start).
-    roles: dict
-        Known roles.
-        Key = player, Value = role ("C" for Civilian, "U" for Undercover, "W" for Mr White).
-
-    Example
-    -------
-    > vote(5, 4, "cat", ["milk", "lion", "house", "cheese", "friend"], [3, 4, 2, 1, 5])
-    > 2
     """
     player_words = {i: [] for i in range(1, n_players + 1)}
     for w, p in zip(list_words, list_players):
@@ -215,27 +258,7 @@ def guess(n_players, player, list_words=[], list_players=[], roles=dict()) -> st
     """
     You are Mr White and you have just been eliminated.
     Guess the secret word of Civilians.
-
-    Parameters
-    ----------
-    n_players: int
-        Number of players.
-    player: int
-        Your player id (from 1 to n_players).
-    list_words: list of string
-        List of words given since the start of the game (empty if you start).
-    list_players: list of int
-        List of players having spoken since the start of the game (empty if you start).
-    roles: dict
-        Known roles (including yours as Mr White).
-        Key = player, Value = role ("C" for Civilian, "U" for Undercover, "W" for Mr White).
-
-    Example
-    -------
-    > guess(5, 1, ["milk", "lion", "house", "cheese", "friend"], [3, 4, 2, 1, 5])
-    > "cat"
     """
-
     candidates = set(list_words)
     for w in list_words:
         for n in list(neighbors.get(w, {}).keys())[:TOPK]:
