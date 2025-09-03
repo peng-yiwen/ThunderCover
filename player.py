@@ -181,7 +181,7 @@ def speak(
     # If Mr White (secret_word empty) fallback selection to blend with room
     if secret_word == "":
         if not list_words:
-            return "life"
+            return "water" # the most popular word based on PageRank
         candidates = set()
         for w in list_words:
             for n in list(neighbors.get(w, {}).keys())[:8]:

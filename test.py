@@ -20,8 +20,8 @@ words = [str(word) for word in data.names]  # words
 # This is a function to test your player
 
 import time
-# from player import speak, vote, guess
-from undercover_agent import speak, vote, guess
+from player import speak, vote, guess
+# from undercover_agent import speak, vote, guess
 
 def test_player(roles, rounds):
     # init
