@@ -24,23 +24,25 @@ speak_ = dict()
 vote_ = dict()
 guess_ = dict()
 
-from random_player import speak, vote, guess
-team = "A"
+from player0 import speak, vote, guess
+team = "player0"
+speak_[team] = speak
+vote_[team] = vote
+guess_[team] = guess
+print('aa')
+
+from player import speak, vote, guess
+team = "player"
 speak_[team] = speak
 vote_[team] = vote
 guess_[team] = guess
 
-from random_player import speak, vote, guess
-team = "B"
+from player2 import speak, vote, guess
+team = "player2"
 speak_[team] = speak
 vote_[team] = vote
 guess_[team] = guess
 
-from random_player import speak, vote, guess
-team = "C"
-speak_[team] = speak
-vote_[team] = vote
-guess_[team] = guess
 
 # single game
 
